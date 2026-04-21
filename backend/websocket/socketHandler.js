@@ -53,6 +53,17 @@ function setupSocket(io, mqttService) {
     });
 
     // Handle IoT Commands
+    socket.on('device_command', (data) => {
+      const targetDevice = data.deviceId || 'NODE-ESP32-1';
+      const commandString = data.cmd || 'ping'; // 'reboot', 'ping', 'calibrate'
+
+      mqttService.publishCommand(`airq/cmd/${targetDevice}`, {
+        cmd: commandString,
+        user: 'system'
+      });
+      console.log(`🔌 WS->MQTT: Forwarded [${commandString}] to ${targetDevice}`);
+    });
+
     socket.on('calibrate_sensor', (data) => {
       const targetDevice = data.deviceId || 'NODE-ESP32-1';
       mqttService.publishCommand(`airq/cmd/${targetDevice}`, {

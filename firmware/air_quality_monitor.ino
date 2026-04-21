@@ -27,7 +27,11 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <HTTPUpdate.h>
+#include <esp_task_wdt.h>
 #include "config.h"
+
+// WDT Settings
+#define WDT_TIMEOUT 15 // 15 seconds watchdog
 
 const char* FIRMWARE_VERSION = "v2.1.4";
 
@@ -83,11 +87,17 @@ void setup() {
   mqttClient.setBufferSize(1024); // Increase buffer for JSON payload
   connectMQTT();
   
+  // Enable Watchdog
+  esp_task_wdt_init(WDT_TIMEOUT, true);
+  esp_task_wdt_add(NULL);
+  
   Serial.println("✅ Setup complete. Beginning sensor readings...");
 }
 
 // ==================== MAIN LOOP ====================
 void loop() {
+  esp_task_wdt_reset(); // Reset watchdog timer
+  
   // Ensure MQTT connection
   if (!mqttClient.connected()) {
     connectMQTT();
@@ -145,11 +155,28 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     if (!error) {
       String cmd = doc["cmd"].as<String>();
       
-      if (cmd == "calibrate") {
+      if (cmd == "reboot") {
+        Serial.println("🔄 Remote REBOOT command received! Dropping hardware securely...");
+        delay(500); // Allow UART buffer to flush
+        ESP.restart(); // Natively pull circuit power down
+      }
+      else if (cmd == "ping") {
+        Serial.println("📡 Remote PING command received! Disconnecting Pong...");
+        StaticJsonDocument<128> pongDoc;
+        pongDoc["id"] = DEVICE_ID;
+        pongDoc["status"] = "pong";
+        pongDoc["uptime"] = millis();
+        char pongPayload[128];
+        serializeJson(pongDoc, pongPayload);
+        mqttClient.publish("airq/status/pong", pongPayload);
+      }
+      else if (cmd == "calibrate") {
         String sensor = doc["sensor"].as<String>();
         Serial.printf("🔧 Running zero-point calibration for %s...\n", sensor.c_str());
-        // Simulate a 2.5s blocking calibration loop (averaging 100 samples)
-        delay(2500);
+        unsigned long start = millis();
+        while (millis() - start < 2500) {
+          mqttClient.loop();  // keep MQTT alive
+        }
         Serial.println("✅ Calibration Complete.");
       } 
       else if (cmd == "update") {
@@ -160,18 +187,22 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         String fullUrl = String("http://") + String(MQTT_SERVER) + String(":") + String(HTTP_SERVER_PORT) + url;
         
         WiFiClient client;
-        t_httpUpdate_return ret = httpUpdate.update(client, fullUrl);
-        
-        switch (ret) {
-          case HTTP_UPDATE_FAILED:
-            Serial.printf("❌ HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
-            break;
-          case HTTP_UPDATE_NO_UPDATES:
-            Serial.println("⚠ HTTP_UPDATE_NO_UPDATES");
-            break;
-          case HTTP_UPDATE_OK:
-            Serial.println("✅ UPDATE OK");
-            break;
+        if (WiFi.status() == WL_CONNECTED) {
+          t_httpUpdate_return ret = httpUpdate.update(client, fullUrl);
+          
+          switch (ret) {
+            case HTTP_UPDATE_FAILED:
+              Serial.printf("❌ HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
+              break;
+            case HTTP_UPDATE_NO_UPDATES:
+              Serial.println("⚠ HTTP_UPDATE_NO_UPDATES");
+              break;
+            case HTTP_UPDATE_OK:
+              Serial.println("✅ UPDATE OK");
+              break;
+          }
+        } else {
+          Serial.println("❌ WiFi not connected, OTA skipped");
         }
       }
     }
@@ -183,73 +214,75 @@ void connectWiFi() {
   Serial.printf("📡 Connecting to WiFi: %s", WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   
-  int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 30) {
-    delay(500);
+  int retries = 0;
+  while (WiFi.status() != WL_CONNECTED && retries < 10) {
+    delay(1000);
     Serial.print(".");
-    attempts++;
+    retries++;
   }
   
   if (WiFi.status() == WL_CONNECTED) {
     Serial.printf("\n✅ WiFi Connected! IP: %s\n", WiFi.localIP().toString().c_str());
   } else {
-    Serial.println("\n❌ WiFi Connection Failed! Restarting...");
-    ESP.restart();
+    Serial.println("\n❌ WiFi Connection Failed! Continuing offline...");
   }
 }
 
 // ==================== MQTT CONNECTION ====================
 void connectMQTT() {
-  while (!mqttClient.connected()) {
+  int retries = 0;
+  while (!mqttClient.connected() && retries < 5) {
     Serial.print("📡 Connecting to MQTT...");
     
     if (mqttClient.connect(DEVICE_ID)) {
       Serial.println(" ✅ Connected!");
       // Subscribe to command topic for this specific device
       mqttClient.subscribe(MQTT_CMD_TOPIC);
+      break;
     } else {
-      Serial.printf(" ❌ Failed (rc=%d). Retrying in 5s...\n", mqttClient.state());
-      delay(5000);
+      Serial.printf(" ❌ Failed (rc=%d). Retrying in 2s...\n", mqttClient.state());
+      delay(2000);
+      retries++;
     }
   }
 }
 
 // ==================== READ MQ2 SENSOR ====================
-float readMQ2_PPM() {
-  int raw = analogRead(MQ2_PIN);
+float readMQ2_PPM(int raw) {
+  if (raw < 10) Serial.println("⚠ MQ2 disconnected?");
+  float voltage = raw * (3.3 / 4095.0);
+  if (voltage <= 0.01) return 0; // Prevent div by zero
   
   // Calculate sensor resistance
-  float voltage = raw * (3.3 / 4095.0);
   float rs = ((3.3 - voltage) / voltage) * MQ2_RL;
   float ratio = rs / MQ2_R0;
   
   // Approximate PPM using datasheet curve for LPG
-  // PPM = a * (Rs/Ro)^b — values from datasheet sensitivity curve
   float ppm = 1000.0 * pow(ratio, -2.2);
-  
   return ppm;
 }
 
 // ==================== READ MQ135 SENSOR ====================
-void readMQ135(float &co2, float &no2, float &nh3) {
-  int raw = analogRead(MQ135_PIN);
+void readMQ135(int raw, float &co2, float &no2, float &nh3) {
+  float voltage = raw * (3.3 / 4095.0);
+  if (voltage <= 0.01) {
+    co2 = 400.0; no2 = 0; nh3 = 0;
+    return;
+  }
   
   // Calculate sensor resistance
-  float voltage = raw * (3.3 / 4095.0);
   float rs = ((3.3 - voltage) / voltage) * MQ135_RL;
   float ratio = rs / MQ135_R0;
   
   // Approximate gas concentrations using datasheet curves
-  // Note: These are approximate — MQ135 cannot precisely distinguish gases
   co2 = 400.0 + (1000.0 * pow(ratio, -1.8));  // CO₂ estimate
   no2 = 0.05 * pow(ratio, -1.2);               // NO₂ estimate
   nh3 = 10.0 * pow(ratio, -1.5);               // NH₃ estimate (most accurate for MQ135)
 }
 
 // ==================== READ DUST SENSOR ====================
-float readDustDensity() {
-  // GP2Y1010AU0F timing: LED on → wait 280µs → read → wait 40µs → LED off
-  digitalWrite(DUST_LED_PIN, LOW);  // LED ON (active low)
+float readDustDensity(float &voltage) {
+  digitalWrite(DUST_LED_PIN, LOW);  // LED ON
   delayMicroseconds(280);
   
   int raw = analogRead(DUST_APIN);
@@ -259,14 +292,10 @@ float readDustDensity() {
   delayMicroseconds(9680);           // Complete the 10ms cycle
   
   // Convert to voltage
-  float voltage = raw * (3.3 / 4095.0);
+  voltage = raw * (3.3 / 4095.0);
   
-  // Convert voltage to dust density (µg/m³)
-  // Using datasheet formula: density = (0.170 × V) - 0.1
   float density = (0.170 * voltage - 0.1) * 1000;  // Convert mg/m³ to µg/m³
-  if (density < 0) density = 0;
-  
-  return density;
+  return (density < 0) ? 0 : density;
 }
 
 // ==================== PUBLISH SENSOR DATA ====================
@@ -277,25 +306,26 @@ void publishSensorData() {
   
   // Check DHT11 read success
   if (isnan(temperature) || isnan(humidity)) {
-    Serial.println("⚠ DHT11 read failed! Skipping this cycle.");
-    return;
+    Serial.println("⚠ DHT11 read failed!");
+    temperature = -1;
+    humidity = -1;
   }
   
   // Read MQ2
   int mq2Raw = analogRead(MQ2_PIN);
-  float mq2Ppm = readMQ2_PPM();
+  float mq2Ppm = readMQ2_PPM(mq2Raw);
   
   // Read MQ135
-  float co2, no2, nh3;
-  readMQ135(co2, no2, nh3);
   int mq135Raw = analogRead(MQ135_PIN);
+  float co2, no2, nh3;
+  readMQ135(mq135Raw, co2, no2, nh3);
   
   // Read Dust Sensor
-  float dustDensity = readDustDensity();
-  float dustVoltage = analogRead(DUST_APIN) * (3.3 / 4095.0);
+  float dustVoltage = 0.0;
+  float dustDensity = readDustDensity(dustVoltage);
   
   // Build JSON payload
-  StaticJsonDocument<512> doc;
+  StaticJsonDocument<768> doc;
   
   // Metadata
   JsonObject metadata = doc.createNestedObject("metadata");
@@ -326,10 +356,10 @@ void publishSensorData() {
   dht11["humidity"] = (int)humidity;
   
   // Serialize and publish
-  char payload[512];
+  char payload[768];
   serializeJson(doc, payload);
   
-  if (mqttClient.publish(MQTT_TOPIC, payload)) {
+  if (mqttClient.publish(MQTT_TOPIC, payload, true)) {
     Serial.printf("📤 Published: T=%.1f°C H=%d%% CO2=%dppm MQ2=%dppm Dust=%.1fµg/m³\n",
                   temperature, (int)humidity, (int)co2, (int)mq2Ppm, dustDensity);
   } else {

@@ -119,7 +119,10 @@ class MQTTService {
   }
 
   publishCommand(topic, payload) {
-    if (this.client && this.client.connected) {
+    if (this.simulator) { // We are in simulation mode
+      console.log(`🎮 Simulator intercepted command: ${payload.cmd}`);
+      this.simulator.handleSimulationCommand(payload.cmd);
+    } else if (this.client && this.client.connected) {
       this.client.publish(topic, JSON.stringify(payload));
       console.log(`📡 Dispatched Command to ${topic}:`, payload);
     } else {
@@ -127,9 +130,6 @@ class MQTTService {
     }
   }
 
-  /**
-   * Start the internal simulator for development
-   */
   startSimulator() {
     const interval = parseInt(process.env.SIMULATOR_INTERVAL_MS) || 3000;
     console.log(`🎮 Starting Sensor Simulator (interval: ${interval}ms)`);
@@ -137,7 +137,25 @@ class MQTTService {
 
     this.simulatorInterval = setInterval(async () => {
       const rawData = this.simulator.generateReading();
+      
+      if (!rawData) {
+        // Node is rebooting, drop telemetry and connection signal entirely
+        return;
+      }
+      
       await this.handleSensorData(rawData);
+
+      // Inject robust mocked Hardware Heartbeat actively simulating a connected ESP32 Node
+      this.handleDeviceHeartbeat({
+        id: 'NODE-ESP32-1',
+        name: 'Primary Factory Sensor',
+        location: 'Zone A - Main Floor',
+        ip: '192.168.1.104',
+        mac: 'E8:DB:84:C1:4F:92',
+        firmware: 'v2.1.4',
+        signal: -Math.floor(Math.random() * (75 - 60 + 1) + 60), // Randomize RSSI
+        sensors: ['DHT11', 'MQ135', 'MQ2', 'GP2Y1014']
+      });
     }, interval);
   }
 

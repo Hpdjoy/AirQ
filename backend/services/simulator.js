@@ -31,6 +31,32 @@ class SensorSimulator {
     this.activeEvent = null;
     this.eventCountdown = 0;
     this.tickCount = 0;
+
+    // Hardware Simulation State
+    this.hardwareStatus = 'online'; // online, rebooting, calibrating
+  }
+
+  /**
+   * Handle incoming remote commands
+   */
+  handleSimulationCommand(cmd) {
+    if (cmd === 'reboot') {
+      console.log(`🔌 Simulator Hardware: Reboot sequence initiated...`);
+      this.hardwareStatus = 'rebooting';
+      setTimeout(() => { 
+        this.hardwareStatus = 'online'; 
+        console.log(`✅ Simulator Hardware: Reboot cycle complete (System Online).`);
+      }, 8000); // 8 second localized death sequence
+    } else if (cmd === 'calibrate') {
+      console.log(`🔧 Simulator Hardware: Zero-point calibration initiated...`);
+      this.hardwareStatus = 'calibrating';
+      setTimeout(() => { 
+        this.hardwareStatus = 'online'; 
+        console.log(`✅ Simulator Hardware: Calibration cycle complete.`);
+      }, 4000); // 4 second calibration process
+    } else if (cmd === 'ping') {
+      console.log(`📡 Simulator Hardware: Received Ping. Sending Pong.`);
+    }
   }
 
   /**
@@ -90,6 +116,10 @@ class SensorSimulator {
    * @returns {Object} Raw sensor data matching ESP32 format
    */
   generateReading() {
+    if (this.hardwareStatus === 'rebooting') {
+      return null; // A rebooting node emits absolute 0 network presence
+    }
+
     this.tickCount++;
     const todFactor = this.getTimeOfDayFactor();
 
@@ -107,6 +137,12 @@ class SensorSimulator {
     let mq135Raw = this.noise(this.baseValues.mq135Raw + todFactor * 200, 20);
     let dustDensity = this.noise(this.baseValues.dustDensity + todFactor * 10, 2);
     let dustVoltage = this.noise(this.baseValues.dustVoltage + todFactor * 0.3, 0.05);
+
+    if (this.hardwareStatus === 'calibrating') {
+      mq2Ppm = 0; mq2Raw = 0;
+      co2Ppm = 400; no2Ppm = 0; nh3Ppm = 0; mq135Raw = 0;
+      dustDensity = 0; dustVoltage = 0;
+    }
 
     // Apply active event boosts
     if (this.activeEvent && this.eventCountdown > 0) {

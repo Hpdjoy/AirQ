@@ -118,7 +118,7 @@ function App() {
       case 'zones':
         return <ZonesPage isConnected={isConnected} sensorData={sensorData} alerts={alerts} />;
       case 'devices':
-        return <DevicesPage isConnected={isConnected} sensorData={sensorData} devices={devices} />;
+        return <DevicesPage isConnected={isConnected} sensorData={sensorData} devices={devices} emitCommand={emitCommand} />;
       case 'reports':
         return <ReportsPage historyData={historyData} />;
       case 'users':
