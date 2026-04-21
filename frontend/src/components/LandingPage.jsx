@@ -1,5 +1,20 @@
 import { useState } from 'react';
-import { Shield, Activity, Share2, Wind, Lock, ArrowRight, User } from 'lucide-react';
+import {
+  Activity,
+  Bell,
+  Brain,
+  ChartNoAxesCombined,
+  Cpu,
+  Lock,
+  Mail,
+  MapPin,
+  Phone,
+  ShieldCheck,
+  User,
+  Wind,
+  ArrowRight
+} from 'lucide-react';
+import './LandingPage.css';
 
 export default function LandingPage({ onLoginComplete }) {
   const [isLoginMode, setIsLoginMode] = useState(true);
@@ -9,6 +24,59 @@ export default function LandingPage({ onLoginComplete }) {
   const [password, setPassword] = useState('');
   const [name, setName] = useState(''); // for signup
   const [loading, setLoading] = useState(false);
+
+  const featureCards = [
+    {
+      icon: Activity,
+      title: 'Live Air Quality Monitoring',
+      text: 'Track temperature, humidity, gas concentration, and particulate metrics in real time.'
+    },
+    {
+      icon: Bell,
+      title: 'Rule-Based Alerts',
+      text: 'Receive instant threshold breach alerts with acknowledgment tracking and alert history.'
+    },
+    {
+      icon: ChartNoAxesCombined,
+      title: 'Historical Analytics',
+      text: 'Explore trends, compare time windows, and generate actionable insights from stored telemetry.'
+    },
+    {
+      icon: Cpu,
+      title: 'Connected Device Control',
+      text: 'Manage connected nodes, calibrate sensors, and send command actions from one interface.'
+    }
+  ];
+
+  const stackHighlights = [
+    {
+      icon: Brain,
+      title: 'Smart Alert Engine',
+      text: 'Derived metrics and adaptive alert logic for safer indoor environments.'
+    },
+    {
+      icon: ShieldCheck,
+      title: 'Secure Access Layer',
+      text: 'Cookie-backed auth with role-aware access to monitoring and control pages.'
+    },
+    {
+      icon: Wind,
+      title: 'MQTT + WebSocket Flow',
+      text: 'Low-latency data transport from hardware nodes to dashboard visualizations.'
+    },
+    {
+      icon: ChartNoAxesCombined,
+      title: 'Report-Ready Data',
+      text: 'Exportable history datasets for project review, compliance, and documentation.'
+    }
+  ];
+
+  const jumpTo = (id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -42,138 +110,186 @@ export default function LandingPage({ onLoginComplete }) {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-secondary)', overflowX: 'hidden' }}>
-      
-      {/* Navbar Minimal */}
-      <nav style={{ display: 'flex', justifyContent: 'space-between', padding: '1.5rem 5%', background: '#fff', borderBottom: '1px solid var(--border-subtle)', alignItems: 'center' }}>
-        <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Wind size={26} color="var(--accent-blue)" /> AirQ Platform
+    <div className="landing">
+      <div className="air-bg air-bg--one" aria-hidden="true" />
+      <div className="air-bg air-bg--two" aria-hidden="true" />
+      <div className="air-pattern" aria-hidden="true" />
+      <div className="air-flow" aria-hidden="true" />
+      <div className="air-orb air-orb--one" aria-hidden="true" />
+      <div className="air-orb air-orb--two" aria-hidden="true" />
+
+      <header className="landing-header">
+        <div className="landing-brand">
+          <Wind size={24} />
+          AirQ
         </div>
-        <div>
-          <button style={{ background: 'transparent', border: 'none', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer', marginRight: '24px' }}>Documentation</button>
-          <button 
-            onClick={() => {
-              const el = document.getElementById('auth-portal');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }}
-            style={{ padding: '10px 24px', background: 'var(--accent-blue)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: 600, cursor: 'pointer', transition: 'transform 0.2s' }}
-          >
-            Access Portal
+        <nav className="landing-nav">
+          <button onClick={() => jumpTo('features')}>Features</button>
+          <button onClick={() => jumpTo('platform')}>Platform</button>
+          <button className="landing-nav-cta" onClick={() => jumpTo('auth-portal')}>
+            Get Started
           </button>
-        </div>
-      </nav>
+        </nav>
+      </header>
 
-      <main style={{ flex: 1, padding: '4rem 5%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4rem' }}>
-        
-        {/* Hero Section */}
-        <div style={{ textAlign: 'center', maxWidth: '800px', animation: 'fadeIn 0.8s ease-out' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent-blue)', padding: '6px 16px', borderRadius: '30px', fontSize: '0.8rem', fontWeight: 700, marginBottom: '24px' }}>
-            <Activity size={14} /> End-to-End Industrial Solution
-          </div>
-          <h1 style={{ fontSize: '3.5rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1.1, marginBottom: '24px', letterSpacing: '-1px' }}>
-            Next-Generation <span style={{ color: 'var(--accent-blue)' }}>IoT Sensory</span> Environments.
+      <main>
+        <section className="hero">
+          <p className="hero-chip">AIRQ MONITORING PLATFORM</p>
+          <h1>
+            Real-Time Environmental Intelligence
+            <span> for Smarter Indoor Spaces.</span>
           </h1>
-          <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '32px' }}>
-            Built inherently for Final Year Project academic evaluation, the AirQ environment implements structural MQTT telemetry, OTA ESP32 configuration updates, and full Restful DB tracking algorithms securely.
+          <p className="hero-copy">
+            AirQ helps you capture, visualize, and act on sensor data with a streamlined dashboard
+            for monitoring, alerts, analytics, reports, and device operations.
           </p>
-        </div>
+          <div className="hero-actions">
+            <button className="hero-primary" onClick={() => jumpTo('auth-portal')}>
+              Access Dashboard <ArrowRight size={16} />
+            </button>
+            <button className="hero-secondary" onClick={() => jumpTo('features')}>
+              Explore Features
+            </button>
+          </div>
+        </section>
 
-        {/* Auth Module Split */}
-        <div id="auth-portal" style={{ display: 'flex', width: '100%', maxWidth: '1000px', background: '#fff', borderRadius: 'var(--radius-lg)', boxShadow: '0 20px 40px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
-          
-          {/* Information Panel */}
-          <div style={{ flex: 1, background: 'linear-gradient(135deg, var(--accent-blue), #2563eb)', color: '#fff', padding: '3rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '16px' }}>Secure Enterprise Telemetry</h2>
-            <p style={{ fontSize: '0.95rem', opacity: 0.9, lineHeight: 1.6, marginBottom: '32px' }}>
-              Authentication guarantees system integrity. Manage devices, adjust machine learning triggers, and generate compliance reports natively with Zero-Trust architectural models.
+        <section id="features" className="section-block">
+          <h2>Features</h2>
+          <div className="features-grid">
+            {featureCards.map((item) => {
+              const Icon = item.icon;
+              return (
+                <article key={item.title} className="feature-card">
+                  <div className="feature-icon">
+                    <Icon size={20} />
+                  </div>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        <section id="platform" className="section-block">
+          <h2>Platform Highlights</h2>
+          <div className="team-grid">
+            {stackHighlights.map((item) => {
+              const Icon = item.icon;
+              return (
+                <article key={item.title} className="team-card team-card--stack">
+                  <div className="stack-icon">
+                    <Icon size={20} />
+                  </div>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="section-block guidance-block">
+          <h2>Built For Your Final Year Project</h2>
+          <p>
+            From data ingestion to dashboard visualization, AirQ is structured to demonstrate
+            complete IoT workflow implementation with measurable outcomes and report-friendly exports.
+          </p>
+          <p>
+            The platform is designed to be extendable, so you can keep improving models,
+            thresholds, and control logic as your project scope evolves.
+          </p>
+        </section>
+
+        <section className="section-block metrics-strip">
+          <h2>What AirQ Helps You Achieve</h2>
+          <div className="gallery-grid">
+            {['Faster response to unsafe conditions', 'Clear data-driven insights', 'Reliable monitoring visibility'].map((item) => (
+              <article key={item} className="value-card">
+                <p>{item}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section id="auth-portal" className="auth-wrap">
+          <div className="auth-highlight">
+            <h2>{isLoginMode ? 'Access The AirQ Dashboard' : 'Create Your AirQ Account'}</h2>
+            <p>
+              Secure login protects monitoring and control operations.
+              Sign in to continue with live telemetry and analytics workflows.
             </p>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 500, fontSize: '0.9rem' }}>
-                <div style={{ background: 'rgba(255,255,255,0.2)', padding: '8px', borderRadius: '50%' }}><Shield size={18} /></div>
-                Native SHA-256 Hashed Passwords
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 500, fontSize: '0.9rem' }}>
-                <div style={{ background: 'rgba(255,255,255,0.2)', padding: '8px', borderRadius: '50%' }}><Share2 size={18} /></div>
-                Hardware MQTT Bridge Protections
-              </li>
-              <li style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 500, fontSize: '0.9rem' }}>
-                <div style={{ background: 'rgba(255,255,255,0.2)', padding: '8px', borderRadius: '50%' }}><Lock size={18} /></div>
-                Strict Document Cookie Validation
-              </li>
+            <ul>
+              <li><Lock size={16} /> Cookie-backed session validation</li>
+              <li><Wind size={16} /> Live telemetry command routing</li>
+              <li><Activity size={16} /> Alert-aware monitoring operations</li>
             </ul>
           </div>
 
-          {/* Form Panel */}
-          <div style={{ flex: 1, padding: '4rem 3rem', background: '#fff' }}>
-            <div style={{ marginBottom: '32px' }}>
-              <h3 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '8px' }}>
-                {isLoginMode ? 'Welcome Back.' : 'Initialize Profile.'}
-              </h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                {isLoginMode ? 'Enter credentials to safely connect to the monitoring loop.' : 'Register system keys to unlock the hardware telemetry systems.'}
-              </p>
-            </div>
+          <div className="auth-form-panel">
+            <h3>{isLoginMode ? 'Welcome Back' : 'Join AirQ'}</h3>
+            <p>{isLoginMode ? 'Sign in to continue.' : 'Create your account to get started.'}</p>
 
-            <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <form onSubmit={handleAuth} className="auth-form">
               {!isLoginMode && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>Full Identity Configuration</label>
-                  <div style={{ position: 'relative' }}>
-                    <User size={18} color="var(--text-muted)" style={{ position: 'absolute', top: '50%', left: '16px', transform: 'translateY(-50%)' }} />
-                    <input 
-                      type="text" required value={name} onChange={e => setName(e.target.value)}
-                      placeholder="Enter Full Name" 
-                      style={{ width: '100%', padding: '14px 14px 14px 44px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)', fontSize: '0.95rem', color: 'var(--text-primary)' }} 
-                    />
-                  </div>
-                </div>
+                <label className="auth-input-wrap">
+                  <User size={16} />
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Full name"
+                  />
+                </label>
               )}
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>Email Node</label>
-                <div style={{ position: 'relative' }}>
-                  <Wind size={18} color="var(--text-muted)" style={{ position: 'absolute', top: '50%', left: '16px', transform: 'translateY(-50%)' }} />
-                  <input 
-                    type="email" required value={email} onChange={e => setEmail(e.target.value)}
-                    placeholder="user@university.edu" 
-                    style={{ width: '100%', padding: '14px 14px 14px 44px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)', fontSize: '0.95rem', color: 'var(--text-primary)' }} 
-                  />
-                </div>
-              </div>
+              <label className="auth-input-wrap">
+                <Mail size={16} />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email address"
+                />
+              </label>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>Secure Matrix Password</label>
-                <div style={{ position: 'relative' }}>
-                  <Lock size={18} color="var(--text-muted)" style={{ position: 'absolute', top: '50%', left: '16px', transform: 'translateY(-50%)' }} />
-                  <input 
-                    type="password" required value={password} onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••" 
-                    style={{ width: '100%', padding: '14px 14px 14px 44px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)', fontSize: '0.95rem', color: 'var(--text-primary)' }} 
-                  />
-                </div>
-              </div>
+              <label className="auth-input-wrap">
+                <Lock size={16} />
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                />
+              </label>
 
-              <button 
-                type="submit" 
-                disabled={loading}
-                style={{ width: '100%', padding: '14px', background: 'var(--accent-blue)', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', marginTop: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', opacity: loading ? 0.7 : 1 }}
-              >
-                {loading ? 'Validating...' : (isLoginMode ? 'Authenticate Link' : 'Register Secure Connection')} <ArrowRight size={18} />
+              <button type="submit" disabled={loading} className="auth-submit">
+                {loading ? 'Validating...' : isLoginMode ? 'Log In' : 'Create Account'}
+                <ArrowRight size={16} />
               </button>
             </form>
 
-            <div style={{ marginTop: '32px', textAlign: 'center' }}>
-              <button 
-                onClick={() => setIsLoginMode(!isLoginMode)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--accent-blue)', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}
-              >
-                {isLoginMode ? 'No account mapping? Register here.' : 'Already have secure keys? Authenticate here.'}
-              </button>
-            </div>
+            <button className="auth-switch" onClick={() => setIsLoginMode(!isLoginMode)}>
+              {isLoginMode ? 'Need an account? Sign up' : 'Already have an account? Log in'}
+            </button>
           </div>
-        </div>
-
+        </section>
       </main>
+
+      <footer className="landing-footer">
+        <div>
+          <h3>AirQ</h3>
+          <p>Intelligent air quality monitoring for connected spaces.</p>
+        </div>
+        <div className="footer-contact">
+          <p><Mail size={14} /> hpdjoy@gmail.com</p>
+          <p><Phone size={14} /> +91 9708128569</p>
+          <p><MapPin size={14} /> Bhubaneswar, Odisha, India</p>
+        </div>
+      </footer>
     </div>
   );
 }
