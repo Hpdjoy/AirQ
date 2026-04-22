@@ -13,6 +13,8 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const MQTTService = require('./services/mqttService');
+const { Aedes } = require('aedes');
+const net = require('net');
 const setupSocket = require('./websocket/socketHandler');
 const sensorRoutes = require('./routes/sensorRoutes');
 const alertRoutes = require('./routes/alertRoutes');
@@ -27,7 +29,7 @@ const server = http.createServer(app);
 // Socket.IO with CORS for React dev server
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    origin: '*',
     methods: ['GET', 'POST']
   }
 });
@@ -56,19 +58,33 @@ app.get('/api/health', (req, res) => {
 
 // Start everything
 const PORT = process.env.PORT || 5000;
+const MQTT_PORT = process.env.MQTT_PORT || 1883;
 
 async function start() {
   // 1. Connect to MongoDB
   await connectDB();
 
-  // 2. Start MQTT service (or simulator)
+  // 1.5. Start Embedded MQTT Broker (Aedes 1.x async API)
+  const aedes = await Aedes.createBroker();
+  const mqttServer = net.createServer((conn) => aedes.handle(conn));
+
+  // Wait for broker to be fully ready before connecting MQTT client
+  await new Promise((resolve, reject) => {
+    mqttServer.listen(MQTT_PORT, () => {
+      console.log(`🔌 Embedded MQTT Broker is listening on port ${MQTT_PORT}`);
+      resolve();
+    });
+    mqttServer.on('error', reject);
+  });
+
+  // 2. Start MQTT service (or simulator) — broker is guaranteed ready now
   const mqttService = new MQTTService(io);
   mqttService.start();
 
   // Route requiring mqttService
   const deviceRoutes = require('./routes/deviceRoutes')(mqttService);
   const firmwareRoutes = require('./routes/firmwareRoutes')(mqttService);
-  
+
   app.use('/api/devices', deviceRoutes);
   app.use('/api/firmware', firmwareRoutes);
 
@@ -84,8 +100,8 @@ async function start() {
     console.log(`
     ╔══════════════════════════════════════════════╗
     ║  🏭  AirQ Industrial Monitor — Backend       ║
-    ║  📡  Port: ${PORT}                             ║
-    ║  💾  MongoDB: ${process.env.MONGODB_URI}   ║
+    ║  📡  Port: ${PORT}                           ║
+    ║  💾  MongoDB: ${process.env.MONGODB_URI}     ║
     ║  🎮  Mode: ${process.env.USE_SIMULATOR === 'true' ? 'SIMULATOR' : 'MQTT BROKER'}                     ║
     ║  🔌  WebSocket: Ready                        ║
     ╚══════════════════════════════════════════════╝
@@ -94,7 +110,9 @@ async function start() {
 
   // Graceful shutdown
   process.on('SIGINT', () => {
-    mqttService.stop();
+    if (mqttService) mqttService.stop();
+    mqttServer.close();
+    aedes.close();
     server.close();
     process.exit(0);
   });

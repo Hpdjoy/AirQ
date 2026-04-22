@@ -6,10 +6,10 @@
  * 
  * Wiring:
  *   GPIO 34 (ADC1_CH6) → MQ2 Analog Out
- *   GPIO 32 (ADC1_CH4) → MQ135 Analog Out
- *   GPIO 35 (ADC1_CH7) → Dust Sensor Analog Out
- *   GPIO 13 (Digital)  → Dust Sensor LED Pin
- *   GPIO 27 (Digital)  → DHT11 Data Pin
+ *   GPIO 35 (ADC1_CH7) → MQ135 Analog Out
+ *   GPIO 32 (ADC1_CH4) → Dust Sensor Analog Out
+ *   GPIO 33 (Digital)  → Dust Sensor LED Pin
+ *   GPIO 4  (Digital)  → DHT11 Data Pin
  *   5V                 → MQ2, MQ135, Dust Sensor VCC
  *   3.3V               → DHT11 VCC
  *   GND                → Common Ground
@@ -33,12 +33,12 @@
 // WDT Settings
 #define WDT_TIMEOUT 15 // 15 seconds watchdog
 
-const char* FIRMWARE_VERSION = "v2.1.4";
+const char* FIRMWARE_VERSION = "v0.0.1";
 
 // ==================== PIN DEFINITIONS ====================
 #define MQ2_PIN       34    // ADC1_CH6 — MQ2 analog
-#define MQ135_PIN     32    // ADC1_CH4 — MQ135 analog
-#define DUST_APIN     35    // ADC1_CH7 — Dust sensor analog
+#define MQ135_PIN     35    // ADC1_CH7 — MQ135 analog
+#define DUST_APIN     35    // ADC1_CH4 — Dust sensor analog
 #define DUST_LED_PIN  13    // Digital — Dust sensor IR LED
 #define DHT_PIN       27    // Digital — DHT11 data
 #define DHT_TYPE      DHT11

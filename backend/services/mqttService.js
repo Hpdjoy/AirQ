@@ -39,12 +39,18 @@ class MQTTService {
     const brokerUrl = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
     console.log(`📡 Connecting to MQTT Broker: ${brokerUrl}`);
 
-    this.client = mqtt.connect(brokerUrl);
+    this.client = mqtt.connect(brokerUrl, {
+      protocolVersion: 4,           // Force MQTT 3.1.1 (Aedes compatibility)
+      connectTimeout: 10000,        // 10s connect timeout
+      clientId: `airq-backend-${Date.now()}`,
+      clean: true,
+    });
 
     this.client.on('connect', () => {
       console.log('✅ MQTT Connected');
       this.client.subscribe(process.env.MQTT_TOPIC || 'airq/sensors/#', (err) => {
         if (err) console.error('MQTT Subscribe error:', err);
+        else console.log('📡 Subscribed to sensor data topics');
       });
       // Subscribe to heartbeats and command ACKs
       this.client.subscribe('airq/status/#', (err) => {
@@ -56,11 +62,12 @@ class MQTTService {
     this.client.on('message', async (topic, message) => {
       try {
         const rawData = JSON.parse(message.toString());
-        
+        console.log(`📥 MQTT message on [${topic}]:`, JSON.stringify(rawData).substring(0, 120) + '...');
+
         // Handle Heartbeat route
         if (topic.includes('airq/status/heartbeat')) {
-           this.handleDeviceHeartbeat(rawData);
-           return;
+          this.handleDeviceHeartbeat(rawData);
+          return;
         }
 
         // Handle regular sensor data
@@ -137,12 +144,12 @@ class MQTTService {
 
     this.simulatorInterval = setInterval(async () => {
       const rawData = this.simulator.generateReading();
-      
+
       if (!rawData) {
         // Node is rebooting, drop telemetry and connection signal entirely
         return;
       }
-      
+
       await this.handleSensorData(rawData);
 
       // Inject robust mocked Hardware Heartbeat actively simulating a connected ESP32 Node
@@ -167,21 +174,38 @@ class MQTTService {
       // 1. Compute all derived metrics
       const processedReading = processReading(rawData, this.previousReading);
 
-      // 2. Save to MongoDB
-      const savedReading = await new SensorReading(processedReading).save();
+      // 1.5. Sanitize NaN/Infinity values (DHT11 sends -1 when it fails,
+      //       which causes NaN in dewPoint and other derived fields)
+      const sanitize = (obj) => {
+        for (const key in obj) {
+          if (typeof obj[key] === 'object' && obj[key] !== null) {
+            sanitize(obj[key]);
+          } else if (typeof obj[key] === 'number' && (isNaN(obj[key]) || !isFinite(obj[key]))) {
+            obj[key] = 0;
+          }
+        }
+      };
+      sanitize(processedReading);
 
-      // 3. Check thresholds and generate alerts
+      // 2. Broadcast to all connected WebSocket clients FIRST (always)
+      this.io.emit('sensorData', processedReading);
+
+      // 3. Update state
+      this.previousReading = processedReading;
+      this.latestReading = processedReading;
+
+      // 4. Save to MongoDB (non-blocking — don't let DB errors kill the stream)
+      try {
+        await new SensorReading(processedReading).save();
+      } catch (dbErr) {
+        console.error('MongoDB save error (data still streamed to dashboard):', dbErr.message);
+      }
+
+      // 5. Check thresholds and generate alerts
       const emitAlert = (alert) => {
         this.io.emit('alert', alert);
       };
       await checkThresholds(processedReading, emitAlert);
-
-      // 4. Broadcast to all connected WebSocket clients
-      this.io.emit('sensorData', processedReading);
-
-      // 5. Update state
-      this.previousReading = processedReading;
-      this.latestReading = processedReading;
 
     } catch (err) {
       console.error('Error handling sensor data:', err.message);

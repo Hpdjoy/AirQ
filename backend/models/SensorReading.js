@@ -9,7 +9,7 @@ const sensorReadingSchema = new mongoose.Schema({
   metadata: {
     sensorId: { type: String, default: 'zone-a' },
     building: { type: String, default: 'main-building' },
-    floor: { type: Number, default: 1 }
+    floor: { type: String, default: '1' }
   },
   // MQ2 — Combustible Gas & Smoke Sensor
   mq2: {
