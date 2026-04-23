@@ -32,7 +32,12 @@ export async function fetchSettings() {
     return _settingsCache;
   }
   try {
-    const res = await fetch(`http://${window.location.hostname}:5000/api/settings`);
+    const host = window.location.hostname;
+    const backendUrl = (host.includes('web.app') || host.includes('firebaseapp.com')) 
+      ? 'http://3.111.196.11:5000' 
+      : `http://${host}:5000`;
+      
+    const res = await fetch(`${backendUrl}/api/settings`);
     const data = await res.json();
     if (data && data._id) {
       _settingsCache = data;

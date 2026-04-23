@@ -1,7 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = `http://${window.location.hostname}:5000`;
+const getBackendUrl = () => {
+  const host = window.location.hostname;
+  // If hosted on Firebase/public domain, point to the known AWS EC2 backend IP
+  if (host.includes('web.app') || host.includes('firebaseapp.com')) {
+    return 'http://3.111.196.11:5000';
+  }
+  return `http://${host}:5000`;
+};
+
+const SOCKET_URL = getBackendUrl();
 
 export function useSocket() {
   const [socket, setSocket] = useState(null);
