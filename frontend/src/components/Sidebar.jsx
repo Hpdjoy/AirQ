@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   LayoutDashboard, Bell, Settings, Info, ChevronLeft, ChevronRight,
   Activity, FileText, Map, Users, Shield, Cpu, HardDrive,
-  Download, History, Wrench, Building2, LogOut
+  Download, History, Wrench, Building2, LogOut, BrainCircuit
 } from 'lucide-react';
 
 const NAV_SECTIONS = [
@@ -12,6 +12,7 @@ const NAV_SECTIONS = [
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { id: 'alerts', label: 'Alerts', icon: Bell, badge: true },
       { id: 'analytics', label: 'Analytics', icon: Activity },
+      { id: 'forecast', label: 'AI Forecast', icon: BrainCircuit },
       { id: 'history', label: 'History', icon: History },
     ]
   },

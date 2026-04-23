@@ -10,6 +10,7 @@ export function useSocket() {
   const [alerts, setAlerts] = useState([]);
   const [historyData, setHistoryData] = useState([]);
   const [devices, setDevices] = useState([]);
+  const [prediction, setPrediction] = useState(null);
 
   useEffect(() => {
     // Connect to Node.js backend
@@ -47,6 +48,11 @@ export function useSocket() {
       setDevices(activeDevices);
     });
 
+    // ML prediction updates
+    newSocket.on('prediction', (predData) => {
+      setPrediction(predData);
+    });
+
     // Cleanup on unmount
     return () => newSocket.close();
   }, []);
@@ -71,6 +77,7 @@ export function useSocket() {
     alerts,
     historyData,
     devices,
+    prediction,
     acknowledgeAlert,
     requestHistory,
     emitCommand

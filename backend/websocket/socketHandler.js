@@ -12,6 +12,14 @@ function setupSocket(io, mqttService) {
       socket.emit('sensorData', latest);
     }
 
+    // Send the latest prediction if available
+    const PredictionService = require('../services/predictionService');
+    const predService = socket.server?._predictionService;
+    // We'll also check via a simpler approach — store on io
+    if (io._latestPrediction) {
+      socket.emit('prediction', io._latestPrediction);
+    }
+
     // Handle client requesting historical data
     socket.on('requestHistory', async (params) => {
       try {

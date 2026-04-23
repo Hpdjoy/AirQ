@@ -2,7 +2,7 @@ import {
   BarChart3, Thermometer, Droplets, Wind, Users, Factory,
   Flame, FlaskConical, TestTube2, Leaf, CloudFog,
   ShieldAlert, Heart, Smile, Meh, Frown,
-  ThermometerSun, Fan
+  ThermometerSun, Fan, BrainCircuit, TrendingUp, TrendingDown, Minus, Clock
 } from 'lucide-react';
 import MetricCard from './MetricCard';
 import GaugeCard from './GaugeCard';
@@ -22,7 +22,7 @@ function ComfortIcon({ level }) {
  * Main Dashboard Layout
  * Assembles all components into the industrial monitoring interface
  */
-export default function Dashboard({ sensorData, alerts, historyData, isConnected, onAcknowledge, onRequestHistory }) {
+export default function Dashboard({ sensorData, alerts, historyData, isConnected, onAcknowledge, onRequestHistory, prediction }) {
   const d = sensorData;
 
   const aqiInfo = d ? getAQIStatus(d.derived?.compositeAQI || 0) : { label: '--', status: 'info', color: '#2563eb' };
@@ -192,6 +192,51 @@ export default function Dashboard({ sensorData, alerts, historyData, isConnected
       <div className="animate-in animate-in-delay-3" style={{ marginBottom: 'var(--gap-md)' }}>
         <RealtimeChart historyData={historyData} onRequestHistory={onRequestHistory} />
       </div>
+
+      {/* ===== SECTION 4.5: AI Forecast Widget ===== */}
+      {prediction && (
+        <div className="card animate-in animate-in-delay-3" style={{ marginBottom: 'var(--gap-md)', background: 'linear-gradient(135deg, rgba(124,58,237,0.04), rgba(8,145,178,0.04))' }}>
+          <div className="card__header">
+            <span className="card__label"><BrainCircuit size={16} /> AI Forecast — PM2.5</span>
+            <span className={`card__badge card__badge--${prediction.status === 'success' ? 'safe' : 'info'}`}>
+              {prediction.status === 'success' ? 'LSTM' : 'SIMULATED'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ flex: 1, minWidth: '140px' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Clock size={12} /> +30 Minutes
+              </div>
+              <div className="card__value" style={{ fontSize: '1.6rem' }}>
+                {prediction.predicted_pm25_30m.toFixed(1)}
+                <span className="card__unit">µg/m³</span>
+              </div>
+            </div>
+            <div style={{ flex: 1, minWidth: '140px' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <Clock size={12} /> +60 Minutes
+              </div>
+              <div className="card__value" style={{ fontSize: '1.6rem' }}>
+                {prediction.predicted_pm25_60m.toFixed(1)}
+                <span className="card__unit">µg/m³</span>
+              </div>
+            </div>
+            <div style={{ flex: 1, minWidth: '120px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: prediction.trend === 'rising' ? 'var(--status-danger-bg)' : prediction.trend === 'falling' ? 'var(--status-safe-bg)' : 'var(--status-info-bg)',
+                color: prediction.trend === 'rising' ? 'var(--status-danger)' : prediction.trend === 'falling' ? 'var(--status-safe)' : 'var(--text-muted)'
+              }}>
+                {prediction.trend === 'rising' ? <TrendingUp size={18} /> : prediction.trend === 'falling' ? <TrendingDown size={18} /> : <Minus size={18} />}
+              </div>
+              <div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)', textTransform: 'capitalize' }}>{prediction.trend}</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{Math.round(prediction.confidence * 100)}% confidence</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ===== SECTION 5: Risk + Alerts ===== */}
       <div className="dash-section dash-section--3col animate-in animate-in-delay-4">

@@ -13,6 +13,7 @@ import ZonesPage from './components/ZonesPage';
 import ReportsPage from './components/ReportsPage';
 import UsersPage from './components/UsersPage';
 import FirmwarePage from './components/FirmwarePage';
+import ForecastPage from './components/ForecastPage';
 import LandingPage from './components/LandingPage';
 import { useSocket } from './hooks/useSocket';
 
@@ -54,6 +55,7 @@ function App() {
     alerts,
     devices,
     historyData,
+    prediction,
     acknowledgeAlert,
     requestHistory,
     emitCommand
@@ -107,12 +109,15 @@ function App() {
             isConnected={isConnected}
             onAcknowledge={acknowledgeAlert}
             onRequestHistory={requestHistory}
+            prediction={prediction}
           />
         );
       case 'alerts':
         return <AlertsPage alerts={alerts} onAcknowledge={acknowledgeAlert} />;
       case 'analytics':
         return <AnalyticsPage historyData={historyData} />;
+      case 'forecast':
+        return <ForecastPage prediction={prediction} historyData={historyData} sensorData={sensorData} />;
       case 'history':
         return <HistoryPage historyData={historyData} />;
       case 'zones':

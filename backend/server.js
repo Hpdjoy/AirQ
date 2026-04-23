@@ -22,6 +22,8 @@ const settingsRoutes = require('./routes/settingsRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes');
+const predictionRoutes = require('./routes/predictionRoutes');
+const PredictionService = require('./services/predictionService');
 
 const app = express();
 const server = http.createServer(app);
@@ -45,6 +47,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/predictions', predictionRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -94,6 +97,11 @@ async function start() {
 
   // 3. Setup WebSocket handlers
   setupSocket(io, mqttService);
+
+  // 4. Start ML Prediction Service
+  const predictionService = new PredictionService(io);
+  predictionService.start();
+  app.set('predictionService', predictionService);
 
   // 4. Start HTTP server
   server.listen(PORT, () => {
