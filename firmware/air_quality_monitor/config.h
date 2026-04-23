@@ -8,12 +8,12 @@
 #define CONFIG_H
 
 // ==================== WiFi Configuration ====================
-#define WIFI_SSID       "Airtel_Chota Lund"      // <-- Replace
-#define WIFI_PASSWORD   "Dhurandhar@771"  // <-- Replace
+#define WIFI_SSID       "Mamuni"   // <-- Replace
+#define WIFI_PASSWORD   "mamuni2005"  // <-- Replace
 
 // ==================== MQTT & Server Configuration ====================
 // IP Address of the computer running your Node.js backend
-#define MQTT_SERVER     "192.168.1.3"       // <-- Replace with your PC's IP address
+#define MQTT_SERVER     "10.222.193.135"       // <-- Replace with your PC's IP address
 #define MQTT_PORT       1883
 #define HTTP_SERVER_PORT 5000
 
