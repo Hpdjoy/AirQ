@@ -14,7 +14,7 @@
 // ==================== MQTT & Server Configuration ====================
 // IP Address of the computer running your Node.js backend
 #define MQTT_SERVER                                                            \
-  "3.111.196.11" //"10.222.193.135"       // <-- Replace with your PC's IP
+  "192.168.1.3" //"10.222.193.135"       // <-- Replace with your PC's IP
                 //address
 #define MQTT_PORT 1883
 #define HTTP_SERVER_PORT 5000

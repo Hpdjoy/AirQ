@@ -3,9 +3,9 @@ import { io } from 'socket.io-client';
 
 const getBackendUrl = () => {
   const host = window.location.hostname;
-  // If hosted on Firebase/public domain, point to the known AWS EC2 backend IP
+  // If hosted on Firebase/public domain, point to the known local backend IP
   if (host.includes('web.app') || host.includes('firebaseapp.com')) {
-    return 'http://3.111.196.11:5000';
+    return 'http://192.168.1.3:5000';
   }
   return `http://${host}:5000`;
 };

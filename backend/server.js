@@ -13,7 +13,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const MQTTService = require('./services/mqttService');
-// Aedes imported dynamically below
+const { Aedes } = require('aedes');
 const net = require('net');
 const setupSocket = require('./websocket/socketHandler');
 const sensorRoutes = require('./routes/sensorRoutes');
@@ -68,7 +68,6 @@ async function start() {
   await connectDB();
 
   // 1.5. Start Embedded MQTT Broker (Aedes 1.x async API)
-  const { Aedes } = await import('aedes');
   const aedes = await Aedes.createBroker();
   const mqttServer = net.createServer((conn) => aedes.handle(conn));
 
