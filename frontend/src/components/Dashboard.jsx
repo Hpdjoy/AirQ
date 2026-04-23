@@ -1,15 +1,17 @@
+import { useState, useEffect } from 'react';
 import {
   BarChart3, Thermometer, Droplets, Wind, Users, Factory,
   Flame, FlaskConical, TestTube2, Leaf, CloudFog,
   ShieldAlert, Heart, Smile, Meh, Frown,
-  ThermometerSun, Fan, BrainCircuit, TrendingUp, TrendingDown, Minus, Clock
+  ThermometerSun, Fan, BrainCircuit, TrendingUp, TrendingDown, Minus, Clock,
+  Volume2, VolumeX, Bell, BellOff, AlertTriangle
 } from 'lucide-react';
 import MetricCard from './MetricCard';
 import GaugeCard from './GaugeCard';
 import AlertPanel from './AlertPanel';
 import RealtimeChart from './RealtimeChart';
 import RiskGauge from './RiskGauge';
-import { getAQIStatus, getCO2Status, getGasStatus, formatTime } from '../utils/helpers';
+import { getAQIStatus, getCO2Status, getGasStatus, getDustStatus, getTempStatus, getHumidityStatus, formatTime, fetchSettings } from '../utils/helpers';
 
 // Comfort icon helper
 function ComfortIcon({ level }) {
@@ -25,9 +27,15 @@ function ComfortIcon({ level }) {
 export default function Dashboard({ sensorData, alerts, historyData, isConnected, onAcknowledge, onRequestHistory, prediction }) {
   const d = sensorData;
 
-  const aqiInfo = d ? getAQIStatus(d.derived?.compositeAQI || 0) : { label: '--', status: 'info', color: '#2563eb' };
-  const co2Info = d ? getCO2Status(d.mq135?.co2_ppm || 0) : { label: '--', status: 'info' };
-  const gasInfo = d ? getGasStatus(d.mq2?.ppm || 0) : { label: '--', status: 'info' };
+  // Load threshold settings from backend
+  const [settings, setSettings] = useState(null);
+  useEffect(() => {
+    fetchSettings().then(setSettings);
+  }, []);
+
+  const aqiInfo = d ? getAQIStatus(d.derived?.compositeAQI || 0, settings) : { label: '--', status: 'info', color: '#2563eb' };
+  const co2Info = d ? getCO2Status(d.mq135?.co2_ppm || 0, settings) : { label: '--', status: 'info' };
+  const gasInfo = d ? getGasStatus(d.mq2?.ppm || 0, settings) : { label: '--', status: 'info' };
 
   const roomCapacity = 20;
   const occupancy = d?.derived?.estimatedOccupancy || 0;
@@ -78,7 +86,7 @@ export default function Dashboard({ sensorData, alerts, historyData, isConnected
           icon={<Thermometer size={16} />}
           value={d?.dht11?.temperature}
           unit="°C"
-          status={d?.dht11?.temperature > 32 ? 'warning' : d?.dht11?.temperature > 38 ? 'danger' : 'safe'}
+          status={d ? getTempStatus(d.dht11?.temperature || 0, settings).status : 'safe'}
           sublabel={`Heat Index: ${d?.dht11?.heatIndex || '--'}°C`}
         />
 
@@ -87,7 +95,7 @@ export default function Dashboard({ sensorData, alerts, historyData, isConnected
           icon={<Droplets size={16} />}
           value={d?.dht11?.humidity}
           unit="%"
-          status={d?.dht11?.humidity > 70 ? 'warning' : d?.dht11?.humidity > 85 ? 'danger' : 'safe'}
+          status={d ? getHumidityStatus(d.dht11?.humidity || 0, settings).status : 'safe'}
           sublabel={`Dew Point: ${d?.dht11?.dewPoint || '--'}°C`}
         />
 
@@ -96,7 +104,7 @@ export default function Dashboard({ sensorData, alerts, historyData, isConnected
           icon={<CloudFog size={16} />}
           value={d?.dust?.density}
           unit="µg/m³"
-          status={d?.dust?.density > 75 ? 'danger' : d?.dust?.density > 35 ? 'warning' : 'safe'}
+          status={d ? getDustStatus(d.dust?.density || 0, settings).status : 'safe'}
           sublabel={`AQI: ${d?.dust?.aqi || '--'}`}
         />
 
@@ -305,6 +313,8 @@ export default function Dashboard({ sensorData, alerts, historyData, isConnected
           </div>
         </div>
       </div>
+
+
     </div>
   );
 }

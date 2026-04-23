@@ -9,6 +9,21 @@
  * - Combined: Composite AQI, Fire Risk, Health Risk, Occupancy, Ventilation Demand
  */
 
+const Settings = require('../models/Settings');
+
+// Cached settings for derived metric calculations
+let _cachedSettings = null;
+let _lastFetch = 0;
+async function getSettings() {
+  const now = Date.now();
+  if (_cachedSettings && now - _lastFetch < 60000) return _cachedSettings;
+  try {
+    const s = await Settings.findOne();
+    if (s) { _cachedSettings = s; _lastFetch = now; }
+  } catch (e) { /* use defaults */ }
+  return _cachedSettings || { gasWarning: 500, gasCritical: 1000, co2Warning: 1000, co2Critical: 2000 };
+}
+
 // ============================================================
 // DHT11 DERIVED METRICS
 // ============================================================
@@ -89,9 +104,11 @@ function calculateComfortLevel(T, RH) {
 /**
  * Determine smoke risk level from MQ2 ppm
  */
-function calculateSmokeLevel(ppm) {
-  if (ppm < 500) return 'safe';
-  if (ppm < 2000) return 'warning';
+function calculateSmokeLevel(ppm, settings) {
+  const warn = settings?.gasWarning || 500;
+  const crit = settings?.gasCritical || 1000;
+  if (ppm < warn) return 'safe';
+  if (ppm < crit) return 'warning';
   return 'danger';
 }
 
@@ -114,9 +131,11 @@ function detectGasLeak(currentPpm, previousPpm) {
 /**
  * Map CO₂ level to ASHRAE 62.1 ventilation band
  */
-function calculateVentilationBand(co2_ppm) {
-  if (co2_ppm < 800) return 'good';
-  if (co2_ppm <= 1200) return 'fair';
+function calculateVentilationBand(co2_ppm, settings) {
+  const warn = settings?.co2Warning || 1000;
+  const crit = settings?.co2Critical || 2000;
+  if (co2_ppm < warn) return 'good';
+  if (co2_ppm <= crit) return 'fair';
   return 'poor';
 }
 
@@ -281,8 +300,9 @@ function calculateVentilationStatus(demand) {
  * @param {Object} previousReading - Previous reading for trend detection
  * @returns {Object} Complete sensor reading with all derived metrics
  */
-function processReading(rawData, previousReading = null) {
+async function processReading(rawData, previousReading = null) {
   const { mq2, mq135, dust, dht11, metadata } = rawData;
+  const settings = await getSettings();
 
   // DHT11 derived metrics
   const heatIndex = calculateHeatIndex(dht11.temperature, dht11.humidity);
@@ -291,10 +311,10 @@ function processReading(rawData, previousReading = null) {
   const comfortLevel = calculateComfortLevel(dht11.temperature, dht11.humidity);
 
   // MQ2 derived
-  const smokeLevel = calculateSmokeLevel(mq2.ppm);
+  const smokeLevel = calculateSmokeLevel(mq2.ppm, settings);
 
   // MQ135 derived
-  const ventilationBand = calculateVentilationBand(mq135.co2_ppm);
+  const ventilationBand = calculateVentilationBand(mq135.co2_ppm, settings);
   const vocIndex = calculateVOCIndex(mq135.raw);
   const toxicAlert = calculateToxicGasAlert(mq135.no2_ppm, mq135.nh3_ppm);
 

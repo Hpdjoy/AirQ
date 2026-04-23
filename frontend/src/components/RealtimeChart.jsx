@@ -14,7 +14,7 @@ const CHART_SERIES = [
   { key: 'aqi', label: 'AQI', color: '#0891b2', path: 'derived.compositeAQI' },
 ];
 
-const DURATIONS = ['1h', '6h', '24h', '7d'];
+const DURATIONS = ['live', '1h', '6h', '24h', '7d'];
 
 function getNestedValue(obj, path) {
   return path.split('.').reduce((acc, key) => acc?.[key], obj);
@@ -25,7 +25,7 @@ function getNestedValue(obj, path) {
  */
 export default function RealtimeChart({ historyData = [], onRequestHistory }) {
   const [activeSeries, setActiveSeries] = useState(['temperature', 'co2', 'aqi']);
-  const [duration, setDuration] = useState('1h');
+  const [duration, setDuration] = useState('live');
 
   const chartData = useMemo(() => {
     // Downsample if too many points
@@ -111,7 +111,12 @@ export default function RealtimeChart({ historyData = [], onRequestHistory }) {
               className={`chart-duration-tab ${duration === d ? 'chart-duration-tab--active' : ''}`}
               onClick={() => handleDuration(d)}
             >
-              {d}
+              {d === 'live' ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: duration === 'live' ? '#10b981' : '#94a3b8', display: 'inline-block' }} />
+                  Live
+                </span>
+              ) : d}
             </button>
           ))}
         </div>

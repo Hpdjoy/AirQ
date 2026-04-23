@@ -50,7 +50,7 @@ pip install fastapi uvicorn pydantic numpy pandas scikit-learn tensorflow pymong
 While still in your `ml_service` terminal (with the `(venv)` active), run:
 ```powershell
 python train_model.py
-```
+``` 
 *What happens:*
 - It will pull data from your database (or generate synthetic data if you don't have enough real data yet).
 - It will train for 5 "epochs" (rounds of studying).

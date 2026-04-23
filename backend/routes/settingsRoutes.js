@@ -19,30 +19,53 @@ router.get('/', async (req, res) => {
 // Update settings
 router.post('/', async (req, res) => {
   try {
-    const { tempWarning, tempCritical, co2Warning, co2Critical, gasWarning, gasCritical, aqiWarning, aqiCritical, notifyEmail, notifySms, autoVentilation } = req.body;
-    
     let settings = await Settings.findOne();
     if (!settings) {
       settings = new Settings();
     }
-    
-    settings.tempWarning = tempWarning;
-    settings.tempCritical = tempCritical;
-    settings.co2Warning = co2Warning;
-    settings.co2Critical = co2Critical;
-    settings.gasWarning = gasWarning;
-    settings.gasCritical = gasCritical;
-    settings.aqiWarning = aqiWarning;
-    settings.aqiCritical = aqiCritical;
-    settings.notifyEmail = notifyEmail;
-    settings.notifySms = notifySms;
-    settings.autoVentilation = autoVentilation;
+
+    // Dynamically apply all fields from the request body that exist in the schema
+    const allowedFields = [
+      'tempWarning', 'tempCritical',
+      'co2Warning', 'co2Critical',
+      'gasWarning', 'gasCritical',
+      'dustWarning', 'dustCritical',
+      'humidityWarning', 'humidityCritical',
+      'aqiWarning', 'aqiCritical',
+      'notifyEmail', 'notifySms', 'notifyBuzzer',
+      'autoVentilation', 'fanMinOnTime',
+      'buzzerWarningCooldown', 'buzzerErrorCooldown',
+      'publishInterval'
+    ];
+
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        settings[field] = req.body[field];
+      }
+    }
+
     settings.updatedAt = Date.now();
-    
     await settings.save();
-    
-    // In a real advanced app, we might emit an event here so the alert engine instantly grabs the new ones,
-    // or the alert engine fetches them on cache-miss.
+
+    // Push updated thresholds to ESP32 via MQTT
+    const mqttService = req.app.get('mqttService');
+    if (mqttService) {
+      mqttService.publishCommand('airq/cmd/NODE-ESP32-1', {
+        cmd: 'settings',
+        co2Warning: settings.co2Warning,
+        co2Critical: settings.co2Critical,
+        gasWarning: settings.gasWarning,
+        gasCritical: settings.gasCritical,
+        dustWarning: settings.dustWarning,
+        dustCritical: settings.dustCritical,
+        fanMinOnTime: settings.fanMinOnTime,
+        buzzerWarningCooldown: settings.buzzerWarningCooldown,
+        buzzerErrorCooldown: settings.buzzerErrorCooldown,
+        autoVentilation: settings.autoVentilation
+      });
+      console.log('⚙️ Settings pushed to ESP32 via MQTT');
+    }
+
     res.json({ message: 'Settings saved successfully', settings });
   } catch (err) {
     console.error('Error saving settings:', err);

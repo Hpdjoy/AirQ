@@ -24,7 +24,7 @@ function setupSocket(io, mqttService) {
     socket.on('requestHistory', async (params) => {
       try {
         const SensorReading = require('../models/SensorReading');
-        const { duration = '1h', sensorId = 'zone-a' } = params || {};
+        const { duration = '1h' } = params || {};
 
         const durationMap = {
           '1h': 60 * 60 * 1000,
@@ -36,7 +36,6 @@ function setupSocket(io, mqttService) {
         const timeAgo = new Date(Date.now() - (durationMap[duration] || durationMap['1h']));
 
         const readings = await SensorReading.find({
-          'metadata.sensorId': sensorId,
           timestamp: { $gte: timeAgo }
         })
           .sort({ timestamp: 1 })
@@ -63,13 +62,49 @@ function setupSocket(io, mqttService) {
     // Handle IoT Commands
     socket.on('device_command', (data) => {
       const targetDevice = data.deviceId || 'NODE-ESP32-1';
-      const commandString = data.cmd || 'ping'; // 'reboot', 'ping', 'calibrate'
+      const commandString = data.cmd || 'ping';
+
+      // Fan toggle: reads current state and cycles off → on → auto → off
+      if (commandString === 'fan_toggle') {
+        const device = mqttService.devices.get(targetDevice);
+        const currentFan = device?.actuators?.fan || 'off';
+        const currentMode = device?.actuators?.fanMode || 'auto';
+        
+        let nextState;
+        if (currentMode === 'auto') {
+          nextState = 'on';       // auto → manual ON
+        } else if (currentFan === 'on') {
+          nextState = 'off';      // manual ON → manual OFF
+        } else {
+          nextState = 'auto';     // manual OFF → auto
+        }
+        
+        mqttService.publishCommand(`airq/cmd/${targetDevice}`, {
+          cmd: 'fan',
+          state: nextState
+        });
+        console.log(`🔌 WS→MQTT: Fan [${nextState}] to ${targetDevice}`);
+        return;
+      }
+
+      // Buzzer mute/unmute toggle
+      if (commandString === 'buzzer_mute') {
+        const device = mqttService.devices.get(targetDevice);
+        const isMuted = device?.actuators?.buzzerMuted === true;
+        
+        mqttService.publishCommand(`airq/cmd/${targetDevice}`, {
+          cmd: 'buzzer',
+          state: isMuted ? 'unmute' : 'mute'
+        });
+        console.log(`🔌 WS→MQTT: Buzzer [${isMuted ? 'unmute' : 'mute'}] to ${targetDevice}`);
+        return;
+      }
 
       mqttService.publishCommand(`airq/cmd/${targetDevice}`, {
         cmd: commandString,
         user: 'system'
       });
-      console.log(`🔌 WS->MQTT: Forwarded [${commandString}] to ${targetDevice}`);
+      console.log(`🔌 WS→MQTT: Forwarded [${commandString}] to ${targetDevice}`);
     });
 
     socket.on('calibrate_sensor', (data) => {

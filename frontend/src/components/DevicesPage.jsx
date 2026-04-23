@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Cpu, Wifi, Activity, HardDrive, RefreshCw, Power, Zap, BarChart2 } from 'lucide-react';
+import { Cpu, Wifi, Activity, HardDrive, RefreshCw, Power, Zap, BarChart2, Fan, Volume2, VolumeX } from 'lucide-react';
 import { formatTimeShort } from '../utils/helpers';
 
 export default function DevicesPage({ devices = [], emitCommand }) {
@@ -105,30 +105,88 @@ export default function DevicesPage({ devices = [], emitCommand }) {
               </div>
             </div>
 
+            {/* ACTUATOR STATUS */}
+            {device.actuators && (
+              <div style={{ marginBottom: '20px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ 
+                  flex: 1, minWidth: '100px', padding: '10px 14px', borderRadius: '8px',
+                  background: device.actuators.fan === 'on' ? 'rgba(16,185,129,0.08)' : 'var(--bg-primary)',
+                  border: `1px solid ${device.actuators.fan === 'on' ? 'rgba(16,185,129,0.3)' : 'var(--border-subtle)'}`,
+                  display: 'flex', alignItems: 'center', gap: '10px'
+                }}>
+                  <Fan size={18} style={{ 
+                    color: device.actuators.fan === 'on' ? 'var(--status-safe)' : 'var(--text-muted)',
+                    animation: device.actuators.fan === 'on' ? 'spin 1s linear infinite' : 'none'
+                  }} />
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Exhaust Fan</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: device.actuators.fan === 'on' ? 'var(--status-safe)' : 'var(--text-secondary)' }}>
+                      {device.actuators.fan === 'on' ? 'Running' : 'Off'} · {device.actuators.fanMode === 'auto' ? 'Auto' : 'Manual'}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ 
+                  flex: 1, minWidth: '100px', padding: '10px 14px', borderRadius: '8px',
+                  background: device.actuators.buzzerMuted ? 'rgba(245,158,11,0.08)' : 'var(--bg-primary)',
+                  border: `1px solid ${device.actuators.buzzerMuted ? 'rgba(245,158,11,0.3)' : 'var(--border-subtle)'}`,
+                  display: 'flex', alignItems: 'center', gap: '10px'
+                }}>
+                  {device.actuators.buzzerMuted 
+                    ? <VolumeX size={18} style={{ color: 'var(--status-warning)' }} />
+                    : <Volume2 size={18} style={{ color: 'var(--status-safe)' }} />
+                  }
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Buzzer</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: device.actuators.buzzerMuted ? 'var(--status-warning)' : 'var(--text-secondary)' }}>
+                      {device.actuators.buzzerMuted ? 'Muted' : 'Active'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* ACTION ROW */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', borderTop: '1px solid var(--border-subtle)', paddingTop: '16px', marginBottom: '16px' }}>
               <button 
                 onClick={() => handleCommand(device.id, 'ping')}
                 disabled={device.status !== 'online' || loadingAction}
-                style={{ flex: 1, minWidth: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '10px 4px', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: '6px', cursor: device.status === 'online' ? 'pointer' : 'not-allowed', opacity: device.status === 'online' ? 1 : 0.5, color: 'var(--text-primary)' }}
+                style={{ flex: 1, minWidth: '70px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '10px 4px', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: '6px', cursor: device.status === 'online' ? 'pointer' : 'not-allowed', opacity: device.status === 'online' ? 1 : 0.5, color: 'var(--text-primary)' }}
               >
                 <Activity size={16} color="var(--accent-blue)" />
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, textAlign: 'center' }}>{loadingAction === `${device.id}-ping` ? '...' : 'Ping Node'}</span>
+                <span style={{ fontSize: '0.7rem', fontWeight: 600, textAlign: 'center' }}>{loadingAction === `${device.id}-ping` ? '...' : 'Ping'}</span>
               </button>
               
               <button 
                 onClick={() => handleCommand(device.id, 'calibrate')}
                 disabled={device.status !== 'online' || loadingAction}
-                style={{ flex: 1, minWidth: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '10px 4px', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: '6px', cursor: device.status === 'online' ? 'pointer' : 'not-allowed', opacity: device.status === 'online' ? 1 : 0.5, color: 'var(--text-primary)' }}
+                style={{ flex: 1, minWidth: '70px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '10px 4px', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: '6px', cursor: device.status === 'online' ? 'pointer' : 'not-allowed', opacity: device.status === 'online' ? 1 : 0.5, color: 'var(--text-primary)' }}
               >
                 <RefreshCw size={16} color="var(--status-warning)" />
                 <span style={{ fontSize: '0.7rem', fontWeight: 600, textAlign: 'center' }}>{loadingAction === `${device.id}-calibrate` ? '...' : 'Calibrate'}</span>
               </button>
 
               <button 
+                onClick={() => handleCommand(device.id, 'fan_toggle')}
+                disabled={device.status !== 'online' || loadingAction}
+                style={{ flex: 1, minWidth: '70px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '10px 4px', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: '6px', cursor: device.status === 'online' ? 'pointer' : 'not-allowed', opacity: device.status === 'online' ? 1 : 0.5, color: 'var(--text-primary)' }}
+              >
+                <Fan size={16} color="var(--accent-teal)" />
+                <span style={{ fontSize: '0.7rem', fontWeight: 600, textAlign: 'center' }}>{loadingAction === `${device.id}-fan_toggle` ? '...' : 'Fan'}</span>
+              </button>
+
+              <button 
+                onClick={() => handleCommand(device.id, 'buzzer_mute')}
+                disabled={device.status !== 'online' || loadingAction}
+                style={{ flex: 1, minWidth: '70px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '10px 4px', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: '6px', cursor: device.status === 'online' ? 'pointer' : 'not-allowed', opacity: device.status === 'online' ? 1 : 0.5, color: 'var(--text-primary)' }}
+              >
+                <Volume2 size={16} color="var(--accent-purple)" />
+                <span style={{ fontSize: '0.7rem', fontWeight: 600, textAlign: 'center' }}>{loadingAction === `${device.id}-buzzer_mute` ? '...' : 'Buzzer'}</span>
+              </button>
+
+              <button 
                 onClick={() => handleCommand(device.id, 'reboot')}
                 disabled={device.status !== 'online' || loadingAction}
-                style={{ flex: 1, minWidth: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '10px 4px', background: 'var(--status-danger)', border: 'none', borderRadius: '6px', cursor: device.status === 'online' ? 'pointer' : 'not-allowed', opacity: device.status === 'online' ? 1 : 0.5, color: '#fff' }}
+                style={{ flex: 1, minWidth: '70px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', padding: '10px 4px', background: 'var(--status-danger)', border: 'none', borderRadius: '6px', cursor: device.status === 'online' ? 'pointer' : 'not-allowed', opacity: device.status === 'online' ? 1 : 0.5, color: '#fff' }}
               >
                 <Power size={16} />
                 <span style={{ fontSize: '0.7rem', fontWeight: 600, textAlign: 'center' }}>{loadingAction === `${device.id}-reboot` ? '...' : 'Reboot'}</span>

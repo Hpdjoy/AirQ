@@ -48,7 +48,7 @@ async function getThresholds() {
         cachedSettings.mq2.warning = dbSettings.gasWarning;
         cachedSettings.mq2.critical = dbSettings.gasCritical;
         // Map AQI limits to Health Risk for simplicity
-        cachedSettings.healthRisk.warning = dbSettings.aqiWarning / 300; 
+        cachedSettings.healthRisk.warning = dbSettings.aqiWarning / 300;
         cachedSettings.healthRisk.critical = dbSettings.aqiCritical / 300;
         lastSettingsFetch = now;
       }

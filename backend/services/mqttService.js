@@ -101,7 +101,8 @@ class MQTTService {
       mac: data.mac || '00:00:00:00:00:00',
       firmware: data.firmware || 'v1.0.0',
       signal: data.signal || -100,
-      sensors: data.sensors || ['DHT11', 'MQ135', 'MQ2', 'GP2Y1014AU0F']
+      sensors: data.sensors || ['DHT11', 'MQ135', 'MQ2', 'GP2Y1014AU0F'],
+      actuators: data.actuators || null
     });
     // Broadcast active device update
     this.io.emit('device_heartbeat', Array.from(this.devices.values()));
@@ -172,7 +173,7 @@ class MQTTService {
   async handleSensorData(rawData) {
     try {
       // 1. Compute all derived metrics
-      const processedReading = processReading(rawData, this.previousReading);
+      const processedReading = await processReading(rawData, this.previousReading);
 
       // 1.5. Sanitize NaN/Infinity values (DHT11 sends -1 when it fails,
       //       which causes NaN in dewPoint and other derived fields)

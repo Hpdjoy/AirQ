@@ -44,3 +44,17 @@ yarn-error.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Python & Machine Learning
+venv/
+env/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+ml_service/venv/
+ml_service/__pycache__/
+ml_service/models/*.h5
+ml_service/models/*.pkl

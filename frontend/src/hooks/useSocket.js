@@ -12,6 +12,10 @@ export function useSocket() {
   const [devices, setDevices] = useState([]);
   const [prediction, setPrediction] = useState(null);
 
+  // Track whether the user is viewing a specific history window (1h/6h/24h/7d)
+  // When true, live sensor updates should NOT overwrite the history data.
+  const isViewingHistory = useRef(false);
+
   useEffect(() => {
     // Connect to Node.js backend
     const newSocket = io(SOCKET_URL);
@@ -24,8 +28,10 @@ export function useSocket() {
     // Live sensor data updates
     newSocket.on('sensorData', (data) => {
       setSensorData(data);
-      // Append to local history for charts (keep last 50 points in memory)
-      setHistoryData(prev => [...prev.slice(-49), data]);
+      // Only append to in-memory chart history if NOT viewing a requested window
+      if (!isViewingHistory.current) {
+        setHistoryData(prev => [...prev.slice(-49), data]);
+      }
     });
 
     // Alert triggered by backend engine
@@ -38,9 +44,10 @@ export function useSocket() {
       setAlerts(prev => prev.map(a => a._id === alertId ? { ...a, acknowledged: true } : a));
     });
 
-    // Handle historical data batches
+    // Handle historical data batches (server response to requestHistory)
     newSocket.on('historyData', ({ readings }) => {
       setHistoryData(readings);
+      isViewingHistory.current = true;
     });
 
     // Track active devices from heartbeat
@@ -63,7 +70,15 @@ export function useSocket() {
   }, [socket]);
 
   const requestHistory = useCallback((duration) => {
-    if (socket) socket.emit('requestHistory', { duration });
+    if (socket) {
+      if (duration === 'live') {
+        // Switch back to live rolling mode
+        isViewingHistory.current = false;
+        setHistoryData([]);
+      } else {
+        socket.emit('requestHistory', { duration });
+      }
+    }
   }, [socket]);
 
   const emitCommand = useCallback((commandType, data) => {
