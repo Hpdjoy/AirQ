@@ -36,7 +36,7 @@ router.get('/latest', (req, res) => {
  */
 router.get('/health', async (req, res) => {
   try {
-    const response = await fetch(`${ML_SERVICE_URL}/health`, {
+    const response = await fetch(new URL('health', ML_SERVICE_URL), {
       signal: AbortSignal.timeout(5000)
     });
     const data = await response.json();
@@ -56,7 +56,7 @@ router.get('/health', async (req, res) => {
  */
 router.post('/predict', async (req, res) => {
   try {
-    const response = await fetch(`${ML_SERVICE_URL}/predict`, {
+    const response = await fetch(new URL('predict', ML_SERVICE_URL), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req.body),

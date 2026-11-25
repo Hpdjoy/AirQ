@@ -11,7 +11,8 @@ export default function ReportsPage() {
 
   const fetchReports = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/reports');
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+      const res = await fetch(`${backendUrl}/api/reports`);
       const data = await res.json();
       setReports(data);
     } catch (err) {
@@ -27,7 +28,8 @@ export default function ReportsPage() {
 
   const handleDownload = (report) => {
     // Rely on the standard browser download via Express attachment res.setHeader()
-    window.location.href = `http://localhost:5000/api/reports/download/${report._id}`;
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+    window.location.href = `${backendUrl}/api/reports/download/${report._id}`;
   };
 
   const handleGenerate = async (e) => {
@@ -35,7 +37,8 @@ export default function ReportsPage() {
     setIsGenerating(true); // show some loading indicator if needed
 
     try {
-      const res = await fetch('http://localhost:5000/api/reports/generate', {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+      const res = await fetch(`${backendUrl}/api/reports/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

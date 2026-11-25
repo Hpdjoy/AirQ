@@ -16,7 +16,8 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/users');
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+      const res = await fetch(`${backendUrl}/api/users`);
       const data = await res.json();
       setUsers(data);
     } catch (err) {
@@ -33,7 +34,8 @@ export default function UsersPage() {
   const handleAdd = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:5000/api/users/add', {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+      const res = await fetch(`${backendUrl}/api/users/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, role, password })
@@ -59,7 +61,8 @@ export default function UsersPage() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to permanently revoke this user's profile context?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/users/${id}`, { method: 'DELETE' });
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+      const res = await fetch(`${backendUrl}/api/users/${id}`, { method: 'DELETE' });
       if (res.ok) {
         await fetchUsers();
       } else {
@@ -73,7 +76,8 @@ export default function UsersPage() {
 
   const handleRoleChange = async (id, newRole) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/users/${id}`, {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+      const res = await fetch(`${backendUrl}/api/users/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: newRole })

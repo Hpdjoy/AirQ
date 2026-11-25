@@ -17,7 +17,8 @@ export default function ForecastPage({ prediction, historyData, sensorData }) {
 
   // Check ML service health on mount
   useEffect(() => {
-    fetch(`http://${window.location.hostname}:5000/api/predictions/health`)
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+    fetch(`${backendUrl}/api/predictions/health`)
       .then(res => res.json())
       .then(data => setMlHealth(data))
       .catch(() => setMlHealth({ ml_service: 'offline' }));

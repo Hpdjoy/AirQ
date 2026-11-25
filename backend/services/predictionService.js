@@ -84,7 +84,7 @@ class PredictionService {
       };
 
       // Call the Python ML service
-      const response = await fetch(`${ML_SERVICE_URL}/predict`, {
+      const response = await fetch(new URL('predict', ML_SERVICE_URL), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

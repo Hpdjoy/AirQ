@@ -82,13 +82,17 @@ export default function LandingPage({ onLoginComplete }) {
     e.preventDefault();
     setLoading(true);
 
-    const url = isLoginMode ? 'http://localhost:5000/api/auth/login' : 'http://localhost:5000/api/auth/signup';
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+    const url = isLoginMode ? `${backendUrl}/api/auth/login` : `${backendUrl}/api/auth/signup`;
     const payload = isLoginMode ? { email, password } : { name, email, password };
 
     try {
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
         body: JSON.stringify(payload)
       });
 

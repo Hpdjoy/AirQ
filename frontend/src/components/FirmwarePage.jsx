@@ -34,8 +34,9 @@ export default function FirmwarePage({ devices = [] }) {
     formData.append('targetDevice', 'NODE-ESP32-1');
     formData.append('version', file.name.replace('.bin', ''));
 
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
     try {
-      const res = await fetch('http://localhost:5000/api/firmware/upload', {
+      const res = await fetch(`${backendUrl}/api/firmware/upload`, {
         method: 'POST',
         body: formData
       });

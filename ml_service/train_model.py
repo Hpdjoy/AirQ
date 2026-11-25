@@ -11,7 +11,8 @@ import joblib
 
 # Phase 1: Data Preparation
 def extract_data_from_mongodb():
-    client = MongoClient("mongodb://localhost:27017/")
+    mongo_uri = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/")
+    client = MongoClient(mongo_uri)
     db = client["airq_monitor"]
     collection = db["sensorreadings"]
     

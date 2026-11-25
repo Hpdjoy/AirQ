@@ -32,7 +32,8 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    fetch(`http://${window.location.hostname}:5000/api/settings`)
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+    fetch(`${backendUrl}/api/settings`)
       .then(res => res.json())
       .then(data => {
         if (data && data._id) {
@@ -58,7 +59,8 @@ export default function SettingsPage() {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`http://${window.location.hostname}:5000/api/settings`, {
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+      const res = await fetch(`${backendUrl}/api/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)

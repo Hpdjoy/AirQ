@@ -16,6 +16,7 @@ import FirmwarePage from './components/FirmwarePage';
 import ForecastPage from './components/ForecastPage';
 import LandingPage from './components/LandingPage';
 import { useSocket } from './hooks/useSocket';
+import { getBackendUrl } from './utils/helpers';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -28,9 +29,13 @@ function App() {
       if (match) {
         const token = match[2];
         try {
-          const res = await fetch('http://localhost:5000/api/auth/verify', {
+          const backendUrl = getBackendUrl();
+          const res = await fetch(`${backendUrl}/api/auth/verify`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true'
+            },
             body: JSON.stringify({ token })
           });
           if (res.ok) {

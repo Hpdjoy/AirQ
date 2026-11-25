@@ -1,16 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { io } from 'socket.io-client';
+import { getBackendUrl } from '../utils/helpers';
 
-const getBackendUrl = () => {
-  const host = window.location.hostname;
-  // If hosted on Firebase/public domain, point to the known local backend IP
-  if (host.includes('web.app') || host.includes('firebaseapp.com')) {
-    return 'http://192.168.1.3:5000';
-  }
-  return `http://${host}:5000`;
-};
-
-const SOCKET_URL = getBackendUrl();
+const SOCKET_URL = getBackendUrl() || undefined;
 
 export function useSocket() {
   const [socket, setSocket] = useState(null);
@@ -26,8 +18,12 @@ export function useSocket() {
   const isViewingHistory = useRef(false);
 
   useEffect(() => {
-    // Connect to Node.js backend
-    const newSocket = io(SOCKET_URL);
+    // 1. Connect to WebSocket
+    const newSocket = io(SOCKET_URL, {
+      extraHeaders: {
+        'ngrok-skip-browser-warning': 'true'
+      }
+    });
     setSocket(newSocket);
 
     // Connection events

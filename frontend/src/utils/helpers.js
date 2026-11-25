@@ -25,6 +25,10 @@ const DEFAULTS = {
 let _settingsCache = null;
 let _settingsFetchTime = 0;
 
+export function getBackendUrl() {
+  return import.meta.env.VITE_BACKEND_URL || '';
+}
+
 export async function fetchSettings() {
   const now = Date.now();
   // Cache for 60 seconds
@@ -32,12 +36,11 @@ export async function fetchSettings() {
     return _settingsCache;
   }
   try {
-    const host = window.location.hostname;
-    const backendUrl = (host.includes('web.app') || host.includes('firebaseapp.com')) 
-      ? 'http://3.111.196.11:5000' 
-      : `http://${host}:5000`;
+    const backendUrl = getBackendUrl();
       
-    const res = await fetch(`${backendUrl}/api/settings`);
+    const res = await fetch(`${backendUrl}/api/settings`, {
+      headers: { 'ngrok-skip-browser-warning': 'true' }
+    });
     const data = await res.json();
     if (data && data._id) {
       _settingsCache = data;
